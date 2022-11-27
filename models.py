@@ -13,48 +13,50 @@ def connect_db(app):
     db.init_app(app)
 
 
-# class Tweet(db.Model):
-#     __tablename__ = 'tweets'
+class Tweet(db.Model):
+    __tablename__ = 'tweets'
 
-#     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-#     text = db.Column(db.Text, nullable=False)
-#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True) 
 
-#     user = db.relationship('User', backref="tweets")
+    text = db.Column(db.Text, nullable=False)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    user = db.relationship('User', backref="tweets")
+
+class User(db.Model):
+
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True) 
+    
+    username = db.Column(db.Text, nullable=False, unique=True)
+
+    password = db.Column(db.Text, nullable=False)
 
 
-# class User(db.Model):
+    @classmethod
+    def register(cls, username, pwd):
+        """Register a user with hashed password and return the user."""
 
-#     __tablename__ = 'users'
+        hashed = bcrypt.generate_password_hash(pwd)
+        #turn bytesting into normal (unicode utf8) string
+        hashed_utf8 = hashed.decode("utf8")
 
-#     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+        #return instance of the user with username and hashed password
+        return cls(username=username, password=hashed_utf8)
+    
+    @classmethod
+    def authenticate(cls, username, pwd):
+        """Validate that the user exists and the password is correct.
+        Return user if valid; else return False
+        """
 
-#     username = db.Column(db.Text, nullable=False,  unique=True)
+        u = User.query.filter_by(username=username).first()
 
-#     password = db.Column(db.Text, nullable=False)
-
-#     @classmethod
-#     def register(cls, username, pwd):
-#         """Register user w/hashed password & return user."""
-
-#         hashed = bcrypt.generate_password_hash(pwd)
-#         # turn bytestring into normal (unicode utf8) string
-#         hashed_utf8 = hashed.decode("utf8")
-
-#         # return instance of user w/username and hashed pwd
-#         return cls(username=username, password=hashed_utf8)
-
-#     @classmethod
-#     def authenticate(cls, username, pwd):
-#         """Validate that user exists & password is correct.
-
-#         Return user if valid; else return False.
-#         """
-
-#         u = User.query.filter_by(username=username).first()
-
-#         if u and bcrypt.check_password_hash(u.password, pwd):
-#             # return user instance
-#             return u
-#         else:
-#             return False
+        if u and bcrypt.check_password_hash(u.password, pwd):
+            # return instance of the user
+            return u
+        else:
+            return False
+    
